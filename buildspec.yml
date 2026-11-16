@@ -1,5 +1,11 @@
 version: 0.2
 
+env:
+  variables:
+    DOCKERHUB_USERNAME: "danishmohd"
+  secrets-manager:
+    DOCKERHUB_TOKEN: "/CodeBuild/website-mps/dockerhub:token"
+
 phases:
   build:
     commands:
@@ -9,5 +15,13 @@ phases:
       - curl --fail --silent --show-error --retry 5 --retry-connrefused http://127.0.0.1:8080/ -o /tmp/website-index.html
       - cmp index.html /tmp/website-index.html
       - echo "Website smoke test passed"
+      - |
+        set -eu
+        if [ "${CODEBUILD_WEBHOOK_HEAD_REF:-}" = "refs/heads/master" ]; then
+          IMAGE_URI="docker.io/${DOCKERHUB_USERNAME}/mps-devops-website:${CODEBUILD_RESOLVED_SOURCE_VERSION}"
+          printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          docker tag website-mps:ci "$IMAGE_URI"
+          docker push "$IMAGE_URI"
+        fi
     finally:
       - docker rm -f website-smoke || true
