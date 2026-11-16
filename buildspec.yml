@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - test -s index.html
+      - docker build -t website-mps:ci .
+      - docker run -d --name website-smoke -p 127.0.0.1:8080:80 website-mps:ci
+      - curl --fail --silent --show-error --retry 5 --retry-connrefused http://127.0.0.1:8080/ -o /tmp/website-index.html
+      - cmp index.html /tmp/website-index.html
+      - echo "Website smoke test passed"
+    finally:
+      - docker rm -f website-smoke || true
