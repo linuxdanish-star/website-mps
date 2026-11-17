@@ -5,3 +5,4 @@ Dockerfile
 .dockerignore
 buildspec.yml
 Jenkinsfile
+install-jenkins.sh
